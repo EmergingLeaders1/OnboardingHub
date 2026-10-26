@@ -128,6 +128,11 @@
   .btn-outline{background:transparent; border:1.5px solid var(--teal-700); color:var(--teal-800);}
   .btn-outline:hover{background:var(--teal-100);}
   .btn-sm{padding:8px 14px; font-size:13px; border-radius:9px;}
+  .btn:disabled{opacity:.45; cursor:not-allowed; transform:none; box-shadow:none;}
+  .btn.is-opened{border-color:var(--teal-700); background:var(--teal-100); color:var(--teal-700);}
+  .btn.is-opened::after{content:'✓';}
+  .video-thumb-card.is-opened .video-thumb-label::after{content:'  ✓ Watched';}
+  .module-hint{font-size:12.5px; color:var(--ink-500); margin-top:6px; text-align:right;}
 
   .hero-progress{
     position:relative; z-index:1; margin:34px auto 0; background:rgba(255,255,255,.08);
@@ -334,7 +339,23 @@
 
   footer{margin-top:70px; padding:34px 0; border-top:1px solid var(--sand-200); text-align:center; color:var(--ink-500); font-size:13px;}
 
+  /* account: signed-in chip in the top bar + full-screen sign-in gate */
+  .account-chip{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .account-chip[hidden], .signin-gate[hidden], .signin-error[hidden]{display:none;}
+  .account-avatar{width:30px; height:30px; border-radius:50%; overflow:hidden; background:var(--teal-100); color:var(--teal-700); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;}
+  .account-avatar img{width:100%; height:100%; object-fit:cover;}
+  .account-name{font-size:13px; font-weight:600; color:var(--ink-700); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .account-signout{background:none; border:1px solid var(--sand-200); border-radius:8px; padding:5px 10px; font-size:12px; font-weight:600; color:var(--ink-700);}
+  .account-signout:hover{background:var(--sand-100);}
+  .signin-gate{position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; padding:16px; background:linear-gradient(135deg, var(--teal-950), var(--teal-800));}
+  .signin-card{background:var(--white); border-radius:var(--radius-lg); box-shadow:var(--shadow-md); padding:36px 32px; max-width:440px; width:100%; text-align:center;}
+  .signin-card h2{font-size:26px; margin:6px 0 10px;}
+  .signin-card p{color:var(--ink-700); font-size:14.5px; line-height:1.6; margin:0 0 22px;}
+  .signin-btn{justify-content:center; width:100%;}
+  .signin-error{color:var(--rust-600); font-size:13px; margin:14px 0 0 !important;}
+
   @media(max-width:900px){
+    .account-name{display:none;}
     #mainnav{display:none; flex-direction:column; width:100%; position:absolute; top:64px; left:0; background:var(--white); padding:8px 16px 16px; border-bottom:1px solid var(--sand-200);}
     #mainnav.open{display:flex;}
     #mobilenav-toggle{display:block; background:none; border:1px solid var(--sand-200); border-radius:9px; padding:8px 12px; font-weight:700;}
@@ -354,6 +375,24 @@
     </div>
     <button id="mobilenav-toggle" aria-expanded="false">Menu</button>
     <nav id="mainnav" aria-label="Primary"></nav>
+    <div class="account-chip" id="account-chip" hidden>
+      <span class="account-avatar" id="account-avatar"></span>
+      <span class="account-name" id="account-name"></span>
+      <button class="account-signout" id="account-signout" type="button">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<div class="signin-gate" id="signin-gate" hidden>
+  <div class="signin-card">
+    <span class="eyebrow">Onboarding Hub</span>
+    <h2>Welcome to Emerging Leaders</h2>
+    <p>Sign in with your Google account to begin. Your progress is saved to your account, so you can pick up where you left off on any device.</p>
+    <button class="btn btn-primary signin-btn" id="signin-google" type="button">
+      <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
+      Sign in with Google
+    </button>
+    <p class="signin-error" id="signin-error" hidden></p>
   </div>
 </div>
 
@@ -511,7 +550,7 @@ const MODULES = {
         <div class="info-card-grid">
           <div class="info-card">
             <h5>Theory of change</h5>
-            <p>Two groups, urban youth in informal settlements and smallholder farmers, share one root problem: poverty narrows belief that change is possible. Everyone gets the same core curriculum (leadership, financial literacy, project planning, mentorship), tracked against each person's own goals. Short term: confidence and financial habits. Over time: steadier income and mentoring the next cohort. Full document with the visual diagram is kept alongside this hub.</p>
+            <p>Two groups, urban youth in informal settlements and smallholder farmers, share one root problem: poverty narrows belief that change is possible. Everyone gets the same core curriculum (leadership, financial literacy, project planning, mentorship), tracked against each person's own goals. Short term: confidence and financial habits. Over time: steadier income and mentoring the next cohort. The full document, with the visual diagram, is in the links below.</p>
           </div>
           <div class="info-card">
             <h5>Leadership for Life</h5>
@@ -523,7 +562,8 @@ const MODULES = {
           </div>
           <div class="info-card">
             <h5>Key programmes & evidence</h5>
-            <p>Linked to the Global Impact Dashboard for current reach and outcome data.</p>
+            <p>See the Global Impact Dashboard for current reach and outcome data.</p>
+            <a class="btn btn-outline btn-sm" style="margin-top:10px;" href="https://emergingleaders1.github.io/globalReach/" target="_blank" rel="noopener">Open dashboard</a>
           </div>
           <div class="info-card">
             <h5>2030 North Star</h5>
@@ -550,7 +590,7 @@ const MODULES = {
       ],
       content:`
         <p>This module connects everything covered so far, story, culture, systems and policy, to your specific role. It is completed together with your line manager rather than independently.</p>
-        <p><b>Role clarity & performance integration.</b> Confirm your job description, key deliverables, decision rights, and who you'll collaborate with most. <span class="tag-sample">SAMPLE, to be refined alongside the People Strategy.</span></p>
+        <p><b>Role clarity & performance integration.</b> Confirm your job description, key deliverables, decision rights, and who you'll collaborate with most.</p>
         <p><b>Learning & development.</b> Identify any role-specific training, certifications or shadowing needed in your first quarter.</p>
       `,
       action:'Complete the 30/60/90-day plan template with your manager and schedule your probation check-in dates.',
@@ -642,40 +682,35 @@ const TEAM = [
 /* ---- Content build tracker, sourced from the Onboarding Platform Content Checklist ---- */
 const RESOURCES = {
   start: [
-    {title:'Welcome message from leadership (video or letter)', type:'Culture', status:'not_started', owner:'Wangui', link:'https://docs.google.com/document/d/1EYY4pPE0bOoz5DXglOlfreuT5gJLR0Ri/edit?usp=drive_link', note:''},
+    {title:'Welcome message from leadership', link:'https://docs.google.com/document/d/1EYY4pPE0bOoz5DXglOlfreuT5gJLR0Ri/edit?usp=drive_link'},
   ],
   story: [
-    {title:'Theory of Change', type:'Essential', status:'not_started', owner:'', link:'https://drive.google.com/file/d/1sMMh5ZOClyzbZcKjzlkkSAiXCs_cGsXA/view?usp=sharing', note:''},
-    {title:'About the Leadership for Life curriculum', type:'Essential', status:'not_started', owner:'', link:'https://drive.google.com/file/d/1e4UA47k1rkQNdEBZd1auswA2aYF4gShs/view?usp=drive_link', note:''},
-    {title:'North Star Strategy (2026–2030)', type:'Essential', status:'not_started', owner:'', link:'https://drive.google.com/file/d/1ROxz7K1_7u9jEuBjziXbH0eF38kau_Ge/view?usp=drive_link', note:'Source file: EL Strategic Plan.pdf'},
+    {title:'Theory of Change', link:'https://drive.google.com/file/d/1sMMh5ZOClyzbZcKjzlkkSAiXCs_cGsXA/view?usp=sharing'},
+    {title:'About the Leadership for Life curriculum', link:'https://drive.google.com/file/d/1e4UA47k1rkQNdEBZd1auswA2aYF4gShs/view?usp=drive_link'},
+    {title:'North Star Strategy (2026–2030)', link:'https://drive.google.com/file/d/1ROxz7K1_7u9jEuBjziXbH0eF38kau_Ge/view?usp=drive_link'},
   ],
   work: [
-    {title:'Mission, vision & values, with real examples', type:'Culture', status:'not_started', owner:'', link:'https://docs.google.com/document/d/1piq8Gt57jXuMBeHvXlmCuojWis0nOTnhYsIhzqwT7ms/edit?usp=sharing', note:''},
-    {title:'Culture manifesto, "this is how we work"', type:'Culture', status:'not_started', owner:'', link:'', note:''},
-    {title:'Stories of the values in action, from real staff', type:'Culture', status:'not_started', owner:'', link:'', note:'Reserve space for staff-submitted audio clips.'},
-    {title:'Traditions, rituals & celebrations we keep', type:'Culture', status:'not_started', owner:'', link:'https://docs.google.com/document/d/1UxpBuyXaaGq10iBHQQN1WqbxKVwwFQ2uXjGgCSkkLuw/edit?usp=sharing', note:''},
-    {title:'Meeting culture, how we run meetings', type:'Culture', status:'not_started', owner:'', link:'https://docs.google.com/document/d/1sev24UrjAGP2l0lIavgs8QttQXY3aWtd_ucx8LJPwXc/edit?usp=sharing', note:''},
+    {title:'Mission, vision & values in practice', link:'https://docs.google.com/document/d/1piq8Gt57jXuMBeHvXlmCuojWis0nOTnhYsIhzqwT7ms/edit?usp=sharing'},
+    {title:'Traditions, rituals & celebrations we keep', link:'https://docs.google.com/document/d/1UxpBuyXaaGq10iBHQQN1WqbxKVwwFQ2uXjGgCSkkLuw/edit?usp=sharing'},
+    {title:'How we run meetings', link:'https://docs.google.com/document/d/1sev24UrjAGP2l0lIavgs8QttQXY3aWtd_ucx8LJPwXc/edit?usp=sharing'},
   ],
   people: [
-    {title:'Org chart (interactive or visual)', type:'Essential', status:'complete', owner:'', link:'https://drive.google.com/file/d/1xvByDZsliRU7ACj5moXV1xk8KetaiJRt/view?usp=drive_link', note:'Linked above.'},
-    {title:'"Meet the team" page with photos and fun bios', type:'Fun', status:'complete', owner:'', link:'https://www.emerging-leaders.net/team-2', note:'Source page used to build the Team Directory below.'},
-    {title:'Department overviews, what each team does', type:'Essential', status:'not_started', owner:'', link:'https://docs.google.com/document/d/1NvHT87DerzYzoLBflxIZynUXQxVMYjTIynba03DrAb8/edit?usp=sharing', note:''},
-    {title:'Key contacts directory (HR, IT, Finance, etc.)', type:'Essential', status:'not_started', owner:'', link:'https://docs.google.com/document/d/1I3r7nyWeI0Iz9CFzdqpy5wimRRHAqa5pnwkmGg-OUAM/edit?tab=t.0', note:''},
-    {title:'"Who to go to for what" quick-reference guide', type:'Essential', status:'not_started', owner:'', link:'https://docs.google.com/document/d/1QLBJob1Y-aeM_Z1NCtcs9xibnD28et2oQYJoRiXbGGg/edit?usp=sharing', note:'Draft table already built below.'},
-    {title:'Staff spotlight / hall of fame', type:'Fun', status:'not_started', owner:'', link:'', note:'To be developed.'},
+    {title:'Organisation chart', link:'https://drive.google.com/file/d/1xvByDZsliRU7ACj5moXV1xk8KetaiJRt/view?usp=drive_link'},
+    {title:'Meet the team on our website', link:'https://www.emerging-leaders.net/team-2'},
+    {title:'What each team does', link:'https://docs.google.com/document/d/1NvHT87DerzYzoLBflxIZynUXQxVMYjTIynba03DrAb8/edit?usp=sharing'},
+    {title:'Key contacts directory (HR, IT, Finance and more)', link:'https://docs.google.com/document/d/1I3r7nyWeI0Iz9CFzdqpy5wimRRHAqa5pnwkmGg-OUAM/edit?tab=t.0'},
+    {title:'Who to go to for what', link:'https://docs.google.com/document/d/1QLBJob1Y-aeM_Z1NCtcs9xibnD28et2oQYJoRiXbGGg/edit?usp=sharing'},
   ],
   policies: [
-    {title:'HR policy (incl. all workplace policies)', type:'Essential', status:'not_started', owner:'Boniface', link:'https://drive.google.com/file/d/1_k52mAl3jBzTk9DByBQC7aMpwYTpJmfs/view?usp=drive_link', note:''},
-    {title:'Data protection & confidentiality policy', type:'Essential', status:'not_started', owner:'Boniface', link:'https://drive.google.com/file/d/1sT_DMbduSl9T_pczEHbFvyRmL53u70Qm/view?usp=sharing', note:''},
-    {title:'Brand guidelines SOP', type:'Essential', status:'not_started', owner:'', link:'https://drive.google.com/file/d/1euc6wj-ds60uYHNKJaBhjSYiL7Z0P-Yf/view?usp=drive_link', note:''},
+    {title:'HR policy (incl. all workplace policies)', link:'https://drive.google.com/file/d/1_k52mAl3jBzTk9DByBQC7aMpwYTpJmfs/view?usp=drive_link'},
+    {title:'Data protection & confidentiality policy', link:'https://drive.google.com/file/d/1sT_DMbduSl9T_pczEHbFvyRmL53u70Qm/view?usp=sharing'},
+    {title:'Brand guidelines', link:'https://drive.google.com/file/d/1euc6wj-ds60uYHNKJaBhjSYiL7Z0P-Yf/view?usp=drive_link'},
   ],
   systems: [
-    {title:'List of all tools we use, and what for', type:'Essential', status:'not_started', owner:'', link:'https://docs.google.com/document/d/1wY9cJc71rdk3qc6NS5uod_ACMb_vnOSuU9S142Qixdg/edit?usp=drive_link', note:''},
+    {title:'The tools we use, and what for', link:'https://docs.google.com/document/d/1wY9cJc71rdk3qc6NS5uod_ACMb_vnOSuU9S142Qixdg/edit?usp=drive_link'},
   ],
   role: [
-    {title:'How performance is measured and reviewed', type:'Essential', status:'not_started', owner:'', link:'https://docs.google.com/document/d/1LUMNhK7Rn0jI9VHc8Aj5jFhuTpQ6BBm0Y7AnPTo2we4/edit?usp=sharing', note:''},
-    {title:'Learning & development opportunities', type:'Essential', status:'not_started', owner:'', link:'', note:''},
-    {title:'Career paths and progression framework', type:'Essential', status:'not_started', owner:'', link:'', note:''},
+    {title:'How performance is measured and reviewed', link:'https://docs.google.com/document/d/1LUMNhK7Rn0jI9VHc8Aj5jFhuTpQ6BBm0Y7AnPTo2we4/edit?usp=sharing'},
   ],
 };
 const FEEDBACK_ITEM = {title:'Feedback channel, how staff can improve this hub', status:'not_started'};
@@ -702,7 +737,6 @@ function renderResourceList(items, showStatus=true){
       <div class="resource-item">
         <div class="resource-main">
           <div class="resource-title">${r.title}</div>
-          <div class="resource-meta">${r.type ? `<span>${r.type}</span>`:''}${r.owner ? `<span>Owner: ${r.owner}</span>`:''}${r.note ? `<span class="resource-note">${r.note}</span>`:''}</div>
         </div>
         <div class="resource-side">
           ${showStatus ? badge(r.status) : ''}
@@ -726,10 +760,13 @@ const RACI = [
    ========================================================================= */
 const STORE_KEY = 'elHubProgressV3';
 function loadState(){
-  try{ return Object.assign({checklist:{}, modules:{}, roadmap:{}, visited:{}, systems:{}}, JSON.parse(localStorage.getItem(STORE_KEY))); }
-  catch(e){ return {checklist:{}, modules:{}, roadmap:{}, visited:{}, systems:{}}; }
+  try{ return Object.assign({checklist:{}, modules:{}, roadmap:{}, visited:{}, systems:{}, opened:{}}, JSON.parse(localStorage.getItem(STORE_KEY))); }
+  catch(e){ return {checklist:{}, modules:{}, roadmap:{}, visited:{}, systems:{}, opened:{}}; }
 }
-function saveState(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+function saveState(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  if(window.onHubStateSaved) window.onHubStateSaved(state);  // set by the account sync script below
+}
 let state = loadState();
 
 function statusLabel(s){
@@ -749,15 +786,51 @@ function avatarPlaceholder(initials, photo){
   return `<div class="avatar">${photoIcon()}<span class="avatar-initials">${initials}</span></div>`;
 }
 
-/* compute overall progress: checklist items + module statuses + roadmap statuses */
+/* ---- Document links: each one counts toward progress once it has been opened ---- */
+const RESOURCE_SECTIONS = ['start','story','people','work','role'];  // lists actually shown in the hub
+function linksInHtml(html){ return [...(html||'').matchAll(/href="(https?:[^"]+)"/g)].map(x=>x[1]); }
+function moduleLinks(m){
+  const key = Object.keys(MODULES).find(k=>[].concat(MODULES[k]).includes(m));
+  return [...new Set([...linksInHtml(m.content), ...(RESOURCES[key]||[]).map(r=>r.link)])];
+}
+function trackedLinks(){
+  const urls = [];
+  Object.values(MODULES).flat().forEach(m=>{ if(m) urls.push(...linksInHtml(m.content)); });
+  RESOURCE_SECTIONS.forEach(k=>(RESOURCES[k]||[]).forEach(r=>{ if(r.link) urls.push(r.link); }));
+  POLICIES.forEach(p=>{ if(p.link) urls.push(p.link); });
+  return [...new Set(urls)];
+}
+/* a module only counts as complete once every link inside it has been opened */
+function moduleStatus(m){
+  const st = state.modules[m.title] || m.status;
+  if(st==='complete' && moduleLinks(m).some(u=>!state.opened[u])) return 'in_progress';
+  return st;
+}
+function markOpenedLinks(){
+  document.querySelectorAll('#main a[href^="http"]').forEach(a=>{
+    a.classList.toggle('is-opened', !!state.opened[a.getAttribute('href')]);
+  });
+}
+document.addEventListener('click', e=>{
+  const a = e.target.closest('#main a[href^="http"]');
+  if(!a) return;
+  const url = a.getAttribute('href');
+  if(state.opened[url]) return;
+  state.opened[url] = true;
+  saveState();
+  // re-render after the browser has opened the link
+  setTimeout(()=>{ renderAll(); refreshOverallProgress(); }, 0);
+});
+
+/* compute overall progress: checklist items + module statuses + roadmap statuses + opened links */
 function computeOverallProgress(){
   let total = 0, done = 0;
   CHECKLIST_DAY1.forEach(c=>{ total++; if(state.checklist[c.id]) done++; });
   Object.values(MODULES).flat().forEach(m=>{
     if(!m) return; total++;
-    const st = state.modules[m.title] || m.status;
-    if(st==='complete') done++;
+    if(moduleStatus(m)==='complete') done++;
   });
+  trackedLinks().forEach(u=>{ total++; if(state.opened[u]) done++; });
   ROADMAP.forEach(r=>{
     total++;
     const st = roadmapStatus(r);
@@ -775,6 +848,7 @@ function refreshOverallProgress(){
   if(heroLabel){ heroLabel.textContent = pct+'% complete'; }
   const roadmapTrack = document.getElementById('roadmap-track');
   if(roadmapTrack){ roadmapTrack.innerHTML = '<div class="roadmap-line"></div>' + renderRoadmapItems(); }
+  markOpenedLinks();
 }
 
 /* =========================================================================
@@ -809,7 +883,8 @@ function goTo(id){
    RENDER, MODULE COMPONENT (shared across all sections)
    ========================================================================= */
 function renderModule(m){
-  const st = state.modules[m.title] || m.status;
+  const st = moduleStatus(m);
+  const remaining = moduleLinks(m).filter(u=>!state.opened[u]).length;
   return `
   <div class="module" data-module="${m.title}">
     <div class="module-head">
@@ -820,9 +895,12 @@ function renderModule(m){
           <span>${badge(st)}</span>
         </div>
       </div>
-      <div class="action-row">
-        <button class="btn btn-outline btn-sm" data-set-status="${m.title}" data-status="in_progress">Mark in progress</button>
-        <button class="btn btn-primary btn-sm" data-set-status="${m.title}" data-status="complete">Mark complete</button>
+      <div>
+        <div class="action-row">
+          <button class="btn btn-outline btn-sm" data-set-status="${m.title}" data-status="in_progress">Mark in progress</button>
+          <button class="btn btn-primary btn-sm" data-set-status="${m.title}" data-status="complete" ${remaining ? 'disabled' : ''}>Mark complete</button>
+        </div>
+        ${remaining ? `<div class="module-hint">Open the ${remaining} remaining link${remaining>1?'s':''} in this module to complete it.</div>` : ''}
       </div>
     </div>
     <div class="module-body">
@@ -894,7 +972,7 @@ function renderStart(){
   <div class="section-head">
     <span class="eyebrow">Day 1 checklist</span>
     <h2>Before anything else</h2>
-    <p>Tick these off as they're confirmed. Your manager and People/HR can see this list too.</p>
+    <p>Tick these off as they're confirmed.</p>
   </div>
   <div class="card">
     <ul class="checklist">
@@ -958,11 +1036,6 @@ function renderPeople(){
         <div class="org-branch"><b>HR Specialist</b> <span style="color:var(--ink-500); font-size:12px;">(reports to Country Director)</span></div>
       </div>
     </div>
-  </div>
-
-  <h3 style="font-size:20px; margin-bottom:6px;">Departments & governance</h3>
-  <div class="card" style="margin-bottom:24px;">
-    <p style="margin:0;">Department mandates, current priorities, board & executive governance, and Kenya-specific structure link out from here. <span class="tag-sample"></span></p>
   </div>
 
   <h3 style="font-size:20px; margin-bottom:6px;">Who to go to for what</h3>
@@ -1155,7 +1228,7 @@ function renderRole(){
   <div class="section-head">
     <span class="eyebrow">Ownership</span>
     <h2>Who's accountable for what</h2>
-    <p>This hub sits alongside an operational dashboard for People/HR. Everyone named below has a role in making your onboarding work.</p>
+    <p>Everyone named below has a role in making your onboarding work.</p>
   </div>
   <div class="card">
     <table class="raci-table">
@@ -1270,6 +1343,113 @@ window.addEventListener('scroll', ()=>{
 }, {passive:true});
 updateScrollProgress();
 
+</script>
+
+<script type="module">
+/* =========================================================================
+   ACCOUNTS (Firebase)
+   People sign in with Google and their progress is saved to Firestore under
+   users/{uid}, so it follows them across devices. Paste the web app config
+   from the Firebase console below (see FIREBASE-SETUP.md). While apiKey is
+   empty, or when the file is opened straight from disk (file://, where
+   Google sign-in can't run), the hub skips sign-in and keeps progress in
+   this browser only.
+   ========================================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyC7Q06QLArDCEbp2yWFiGerDiSid4ZxvF4',
+  authDomain: 'el-onboarding-hub.firebaseapp.com',
+  projectId: 'el-onboarding-hub',
+  appId: '1:979807658181:web:b2ab5e615dff09abec10ac',
+};
+
+if(FIREBASE_CONFIG.apiKey && location.protocol.startsWith('http')){
+  const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  const { initializeApp } = await import(SDK + 'firebase-app.js');
+  const { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } = await import(SDK + 'firebase-auth.js');
+  const { getFirestore, doc, getDoc, setDoc, serverTimestamp } = await import(SDK + 'firebase-firestore.js');
+
+  const app = initializeApp(FIREBASE_CONFIG);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({prompt:'select_account'});
+
+  const gate = document.getElementById('signin-gate');
+  const errorEl = document.getElementById('signin-error');
+  const chip = document.getElementById('account-chip');
+  const emptyState = ()=>({checklist:{}, modules:{}, roadmap:{}, visited:{}, systems:{}, opened:{}});
+
+  function showError(msg){ errorEl.textContent = msg; errorEl.hidden = !msg; }
+  function friendlyError(err){
+    const code = err && err.code || '';
+    if(code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return '';
+    if(code === 'auth/unauthorized-domain') return "This page's address isn't approved for sign-in yet. Please contact People/HR.";
+    if(code === 'auth/network-request-failed') return 'No internet connection. Check your connection and try again.';
+    return 'Sign-in failed. Please try again.';
+  }
+  function redraw(){ renderAll(); refreshOverallProgress(); }
+
+  document.getElementById('signin-google').addEventListener('click', async ()=>{
+    showError('');
+    try{ await signInWithPopup(auth, provider); }
+    catch(err){
+      if(err.code === 'auth/popup-blocked'){ signInWithRedirect(auth, provider); return; }
+      showError(friendlyError(err));
+    }
+  });
+  document.getElementById('account-signout').addEventListener('click', ()=> signOut(auth));
+
+  let saveTimer = null;
+  function queueRemoteSave(user){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>{
+      setDoc(doc(db, 'users', user.uid), {
+        progress: JSON.parse(JSON.stringify(state)),
+        email: user.email || '',
+        name: user.displayName || '',
+        progressPercent: computeOverallProgress(),
+        updatedAt: serverTimestamp(),
+      }, {merge:true}).catch(err=>console.warn('Could not save progress to account', err));
+    }, 800);
+  }
+
+  onAuthStateChanged(auth, async user=>{
+    if(!user){
+      // signed out: forget this device's copy so the next person starts fresh
+      window.onHubStateSaved = null;
+      localStorage.removeItem(STORE_KEY);
+      state = emptyState();
+      redraw();
+      chip.hidden = true;
+      gate.hidden = false;
+      return;
+    }
+
+    gate.hidden = true;
+    showError('');
+    const name = user.displayName || user.email || '';
+    document.getElementById('account-name').textContent = name;
+    document.getElementById('account-avatar').innerHTML = user.photoURL
+      ? `<img src="${user.photoURL}" alt="" referrerpolicy="no-referrer">`
+      : (name.trim()[0] || '?').toUpperCase();
+    chip.hidden = false;
+
+    try{
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if(snap.exists() && snap.data().progress){
+        state = Object.assign(emptyState(), snap.data().progress);
+      }
+      // first sign-in: keep whatever progress was already made in this browser
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      window.onHubStateSaved = ()=> queueRemoteSave(user);
+      if(!snap.exists()) queueRemoteSave(user);
+      redraw();
+    }catch(err){
+      console.warn('Could not load progress from account', err);
+      window.onHubStateSaved = ()=> queueRemoteSave(user);
+    }
+  });
+}
 </script>
 </body>
 </html>
